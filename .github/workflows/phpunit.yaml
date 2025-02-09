@@ -28,6 +28,12 @@ on:
         required: false
         default: false
         type: boolean
+      phpunit-lowest-fix:
+        # Fix for https://github.com/symfony/symfony/issues/52844
+        description: Version of PHPUnit to install
+        required: false
+        default: ''
+        type: string
 
 jobs:
   phpunit:
@@ -71,11 +77,12 @@ jobs:
 
       - name: Tests
         env:
-          EXTRA_ARGS: ${{ inputs.publish-summary == 'true' && '--testdox-text test-results.txt' || '' }}
+          SYMFONY_PHPUNIT_VERSION: ${{ matrix.dependency-versions == 'lowest' && inputs.phpunit-lowest-fix || '' }}
+          EXTRA_ARGS: ${{ inputs.publish-summary == true && '--testdox-text test-results.txt' || '' }}
         run: vendor/bin/simple-phpunit $EXTRA_ARGS
 
       - name: Publish Tests Summary
-        if: ${{ inputs.publish-summary == 'true' }}
+        if: ${{ inputs.publish-summary == true }}
         run: |
           echo "## PHPUnit Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

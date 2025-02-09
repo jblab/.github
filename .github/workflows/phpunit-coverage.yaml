@@ -19,7 +19,7 @@ on:
         default: ''
         type: string
       publish-summary:
-        description: Whether to publish test summaries
+        description: Whether to publish test coverage summaries
         required: false
         default: false
         type: boolean
@@ -51,11 +51,11 @@ jobs:
 
       - name: Tests
         env:
-          EXTRA_ARGS: ${{ inputs.publish-summary == 'true' && ' --coverage-cobertura coverage.cobertura.xml' || '' }}
+          EXTRA_ARGS: ${{ inputs.publish-summary == true && ' --coverage-cobertura coverage.cobertura.xml' || '' }}
         run: vendor/bin/simple-phpunit $EXTRA_ARGS
 
       - name: Code Coverage Report
-        if: ${{ inputs.publish-summary == 'true' }}
+        if: ${{ inputs.publish-summary == true }}
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: coverage.cobertura.xml
@@ -70,7 +70,7 @@ jobs:
         continue-on-error: true # Ensure this step regardless of previous failures
 
       - name: Publish Summary
-        if: ${{ inputs.publish-summary == 'true' }}
+        if: ${{ inputs.publish-summary == true }}
         run: |
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
         continue-on-error: true # Ensure this step regardless of previous failures
