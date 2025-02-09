@@ -31,7 +31,7 @@ on:
 
 jobs:
   tests_coverage:
-    name: PHP ${{ input.php-version }}
+    name: PHP ${{ inputs.php-version }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout code
