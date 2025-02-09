@@ -1,0 +1,76 @@
+name: Run PHPUnit tests coverage
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        description: PHP versions used for coverage
+        required: false
+        default: '8.1'
+        type: string
+      runs-on:
+        description: The "runs-on" platform config
+        required: false
+        default: 'ubuntu-latest'
+        type: string
+      php-extensions:
+        description: PHP extensions to install
+        required: false
+        default: ''
+        type: string
+      publish-summary:
+        description: Whether to publish test summaries
+        required: false
+        default: false
+        type: boolean
+      coverage-thresholds:
+        description: Minimum and target coverage percentages (e.g., '60 80')
+        required: false
+        default: '60 80'
+        type: string
+
+jobs:
+  tests_coverage:
+    name: PHP ${{ input.php-version }}
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: xdebug
+          php-version: ${{ inputs.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          composer-options: --no-progress --prefer-dist
+
+      - name: Tests
+        env:
+          EXTRA_ARGS: ${{ inputs.publish-summary == 'true' && ' --coverage-cobertura coverage.cobertura.xml' || '' }}
+        run: vendor/bin/simple-phpunit $EXTRA_ARGS
+
+      - name: Code Coverage Report
+        if: ${{ inputs.publish-summary == 'true' }}
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage.cobertura.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: ${{ inputs.coverage-thresholds }}
+        continue-on-error: true # Ensure this step regardless of previous failures
+
+      - name: Publish Summary
+        if: ${{ inputs.publish-summary == 'true' }}
+        run: |
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true # Ensure this step regardless of previous failures
