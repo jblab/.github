@@ -1,0 +1,32 @@
+name: Check PHP Coding Standards with PHP_CodeSniffer
+
+on:
+  workflow_call:
+    inputs:
+      php:
+        description: PHP Version to use
+        default: 8.2
+        required: false
+        type: string
+
+jobs:
+  phpcs:
+    name: PHP_CodeSniffer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php }}
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Install PHP_CodeSniffer
+        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=tools/phpcs
+
+      - name: Run PHP_CodeSniffer
+        run: tools/phpcs/vendor/bin/phpcs
