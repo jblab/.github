@@ -22,9 +22,6 @@ jobs:
         with:
           php-version: ${{ inputs.php }}
 
-      - name: Install Composer dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
-
       - name: Install PHP_CodeSniffer
         run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=tools/phpcs
 

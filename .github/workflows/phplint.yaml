@@ -1,0 +1,34 @@
+name: Check PHP syntax with PHP Parallel Lint
+
+on:
+  workflow_call:
+    inputs:
+      php:
+        description: PHP Version to use
+        default: 8.2
+        required: false
+        type: string
+      extra-args:
+        description: Extra args to pass to PHP Parallel Lint
+        default: '.'
+        required: false
+        type: string
+
+jobs:
+  phpcs:
+    name: PHP Parallel Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php }}
+
+      - name: Install HP Parallel Lint
+        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=tools/php-lint
+
+      - name: Run HP Parallel Lint
+        run: tools/php-lint/vendor/bin/parallel-lint ${{ inputs.extra-args }}
