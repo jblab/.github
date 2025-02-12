@@ -77,7 +77,7 @@ jobs:
 
       - name: Tests
         env:
-          SYMFONY_PHPUNIT_VERSION: ${{ 'lowet' == matrix.dependency-versions && inputs.phpunit-lowest-fix || '' }}
+          SYMFONY_PHPUNIT_VERSION: ${{ 'lowest' == matrix.dependency-versions && inputs.phpunit-lowest-fix || '' }}
           EXTRA_ARGS: ${{ true == inputs.publish-summary && '--testdox-text test-results.txt' || '' }}
         run: vendor/bin/simple-phpunit $EXTRA_ARGS
 
