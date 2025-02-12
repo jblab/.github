@@ -77,12 +77,12 @@ jobs:
 
       - name: Tests
         env:
-          SYMFONY_PHPUNIT_VERSION: ${{ matrix.dependency-versions == 'lowest' && inputs.phpunit-lowest-fix || '' }}
-          EXTRA_ARGS: ${{ inputs.publish-summary == true && '--testdox-text test-results.txt' || '' }}
+          SYMFONY_PHPUNIT_VERSION: ${{ 'lowet' == matrix.dependency-versions && inputs.phpunit-lowest-fix || '' }}
+          EXTRA_ARGS: ${{ true == inputs.publish-summary && '--testdox-text test-results.txt' || '' }}
         run: vendor/bin/simple-phpunit $EXTRA_ARGS
 
       - name: Publish Tests Summary
-        if: ${{ inputs.publish-summary == true }}
+        if: ${{ true == inputs.publish-summary }}
         run: |
           echo "## PHPUnit Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

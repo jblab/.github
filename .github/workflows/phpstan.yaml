@@ -1,0 +1,41 @@
+name: Check for bugs with PHPStan static analysis tool
+
+on:
+  workflow_call:
+    inputs:
+      php:
+        description: PHP Version to use
+        default: 8.2
+        required: false
+        type: string
+      install-phpunit-bridge:
+        description: Installs PHPUnit before running PHPStan
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php }}
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Install PHPUnit (simple-phpunit)
+        if: ${{ true == inputs.install-phpunit-bridge }}
+        run: vendor/bin/simple-phpunit --version
+
+      - name: Install PHPStan
+        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=tools/phpstan
+
+      - name: Run PHPStan
+        run: tools/phpstan/vendor/bin/phpstan analyse
