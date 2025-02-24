@@ -28,6 +28,11 @@ on:
         required: false
         default: '60 80'
         type: string
+      working-directory:
+        description: Working directory for the workflow
+        default: .
+        required: false
+        type: string
 
 jobs:
   tests_coverage:
@@ -48,8 +53,10 @@ jobs:
         uses: ramsey/composer-install@v2
         with:
           composer-options: --no-progress --prefer-dist
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Tests
+        working-directory: ${{ inputs.working-directory }}
         env:
           EXTRA_ARGS: ${{ true == inputs.publish-summary && ' --coverage-cobertura coverage.cobertura.xml' || '' }}
         run: vendor/bin/simple-phpunit $EXTRA_ARGS
@@ -58,7 +65,7 @@ jobs:
         if: ${{ true == inputs.publish-summary }}
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: coverage.cobertura.xml
+          filename: ${{ inputs.working-directory }}/coverage.cobertura.xml
           badge: true
           fail_below_min: true
           format: markdown
@@ -71,6 +78,7 @@ jobs:
 
       - name: Publish Summary
         if: ${{ true == inputs.publish-summary }}
+        working-directory: ${{ inputs.working-directory }}
         run: |
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
         continue-on-error: true # Ensure this step regardless of previous failures

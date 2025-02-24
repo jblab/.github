@@ -13,6 +13,16 @@ on:
         default: false
         required: false
         type: boolean
+      working-directory:
+        description: Working directory for the workflow
+        default: .
+        required: false
+        type: string
+      tool-directory:
+        description: Directory where the tool is installed
+        default: tools/phpstan
+        required: false
+        type: string
 
 jobs:
   phpstan:
@@ -28,14 +38,18 @@ jobs:
           php-version: ${{ inputs.php }}
 
       - name: Install Composer dependencies
+        working-directory: ${{ inputs.working-directory }}
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Install PHPUnit (simple-phpunit)
         if: ${{ true == inputs.install-phpunit-bridge }}
+        working-directory: ${{ inputs.working-directory }}
         run: vendor/bin/simple-phpunit --version
 
       - name: Install PHPStan
-        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=tools/phpstan
+        working-directory: ${{ inputs.working-directory }}
+        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=${{ inputs.tool-directory }}
 
       - name: Run PHPStan
-        run: tools/phpstan/vendor/bin/phpstan analyse
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.tool-directory }}/vendor/bin/phpstan analyse

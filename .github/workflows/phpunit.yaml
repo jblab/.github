@@ -28,6 +28,11 @@ on:
         required: false
         default: false
         type: boolean
+      working-directory:
+        description: Working directory for the workflow
+        default: .
+        required: false
+        type: string
       phpunit-lowest-fix:
         # Fix for https://github.com/symfony/symfony/issues/52844
         description: Version of PHPUnit to install
@@ -74,8 +79,10 @@ jobs:
         with:
           dependency-versions: ${{ matrix.dependency-versions }}
           composer-options: ${{ matrix.composer-options }} --prefer-dist
+          working-directory: ${{ inputs.working-directory }}
 
       - name: Tests
+        working-directory: ${{ inputs.working-directory }}
         env:
           SYMFONY_PHPUNIT_VERSION: ${{ 'lowest' == matrix.dependency-versions && inputs.phpunit-lowest-fix || '' }}
           EXTRA_ARGS: ${{ true == inputs.publish-summary && '--testdox-text test-results.txt' || '' }}
@@ -83,6 +90,7 @@ jobs:
 
       - name: Publish Tests Summary
         if: ${{ true == inputs.publish-summary }}
+        working-directory: ${{ inputs.working-directory }}
         run: |
           echo "## PHPUnit Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

@@ -8,6 +8,16 @@ on:
         default: 8.2
         required: false
         type: string
+      working-directory:
+        description: Working directory for the workflow
+        default: .
+        required: false
+        type: string
+      tool-directory:
+        description: Directory where the tool is installed
+        default: tools/phpcs
+        required: false
+        type: string
 
 jobs:
   phpcs:
@@ -23,7 +33,9 @@ jobs:
           php-version: ${{ inputs.php }}
 
       - name: Install PHP_CodeSniffer
-        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=tools/phpcs
+        working-directory: ${{ inputs.working-directory }}
+        run: composer upgrade --no-progress --no-scripts --prefer-dist --working-dir=${{ inputs.tool-directory }}
 
       - name: Run PHP_CodeSniffer
-        run: tools/phpcs/vendor/bin/phpcs
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.tool-directory }}/vendor/bin/phpcs
