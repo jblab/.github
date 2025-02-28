@@ -13,6 +13,11 @@ on:
         required: false
         default: 8.1.0
         type: string
+      php-version-highest:
+        description: PHP version for testing highest deps (usually the latest version)
+        required: false
+        default: 8.4
+        type: string
       runs-on:
         description: The "runs-on" platform config
         required: false
@@ -59,7 +64,7 @@ jobs:
             composer-options: --prefer-lowest
 
           # testing dev versions with the highest PHP
-          - php-version: '8.4'
+          - php-version: ${{ inputs.php-version-highest }}
             dependency-versions: highest
             composer-options: '' # allow dev deps
 
