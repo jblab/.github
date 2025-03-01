@@ -1,0 +1,83 @@
+name: Run PHPUnit tests
+
+on:
+  workflow_call:
+    inputs:
+      php-version-matrix:
+        description: PHP versions used in the matrix
+        required: false
+        default: '["8.1", "8.2", "8.3", "8.4"]'
+        type: string
+      runs-on:
+        description: The "runs-on" platform config
+        required: false
+        default: 'ubuntu-latest'
+        type: string
+      php-extensions:
+        description: PHP extensions to install
+        required: false
+        default: ''
+        type: string
+      publish-summary:
+        description: Whether to publish test summaries
+        required: false
+        default: false
+        type: boolean
+      working-directory:
+        description: Working directory for the workflow
+        default: .
+        required: false
+        type: string
+
+jobs:
+  phpunit:
+    name: PHP ${{ matrix.php-version }}, ${{ matrix.dependency-versions }} deps, ${{ matrix.composer-options }}
+    runs-on: ${{ inputs.runs-on }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # normal, locked, non-dev installs
+        php-version: ${{ fromJSON(inputs.php-version-matrix) }}
+        dependency-versions: [locked]
+        composer-options: [--ansi]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: none
+          php-version: ${{ matrix.php-version }}
+          extensions: ${{ inputs.php-extensions }}
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          dependency-versions: ${{ matrix.dependency-versions }}
+          composer-options: ${{ matrix.composer-options }} --prefer-dist
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Tests
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          SYMFONY_PHPUNIT_VERSION: ${{ 'lowest' == matrix.dependency-versions && inputs.phpunit-lowest-fix || '' }}
+          EXTRA_ARGS: ${{ true == inputs.publish-summary && '--testdox-text test-results.txt' || '' }}
+        run: vendor/bin/simple-phpunit $EXTRA_ARGS
+
+      - name: Publish Tests Summary
+        if: ${{ true == inputs.publish-summary }}
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          echo "## PHPUnit Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f test-results.txt ]; then
+            sed -i 's/^ \[x\]/✔/g' test-results.txt
+            sed -i 's/^ \[ \]/❌/g' test-results.txt
+            cat test-results.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test results found." >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true # Ensure this step regardless of previous failures
