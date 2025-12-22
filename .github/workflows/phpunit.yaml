@@ -6,7 +6,7 @@ on:
       php-version-matrix:
         description: PHP versions used in the matrix
         required: false
-        default: '["8.1", "8.2", "8.3", "8.4"]'
+        default: '["8.1", "8.2", "8.3", "8.4", "8.5"]'
         type: string
       php-version-lowest:
         description: PHP version for testing lowest deps
@@ -16,7 +16,7 @@ on:
       php-version-highest:
         description: PHP version for testing highest deps (usually the latest version)
         required: false
-        default: 8.4
+        default: 8.5
         type: string
       runs-on:
         description: The "runs-on" platform config
