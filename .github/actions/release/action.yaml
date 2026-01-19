@@ -1,0 +1,112 @@
+name: jblab/actions-release
+description: Composite action for semantic releases
+inputs:
+  app-id:
+    description: The GitHub Application ID
+    required: true
+  app-private-key:
+    description: The GitHub Application Private Key
+    required: true
+  git-user-name:
+    description: The user name to use for new commits
+    default: github-actions[bot]
+  git-user-email:
+    description: The email to use for new commits
+    default: github-actions[bot]@users.noreply.github.com
+  repository:
+    description: The GitHub repository in which to release, usually the one calling this workflow
+    required: true
+  publish-summary:
+    description: Publish a summary for the release
+    default: "true"
+outputs:
+  new-tag:
+    description: New tag or null if none
+    value: ${{ steps.variables.outputs.new-tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get repository base name
+      id: base-name
+      shell: bash
+      run: echo "repository=$(basename $REPO)" >> $GITHUB_OUTPUT
+      env:
+        REPO: ${{ inputs.repository }}
+
+    - name: Create GitHub App token
+      uses: actions/create-github-app-token@v1.11.0
+      id: app-token
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.app-private-key }}
+        repositories: |
+          ${{ steps.base-name.outputs.repository }}
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        token: ${{ steps.app-token.outputs.token }}
+
+    - name: Copy files
+      shell: bash
+      run: |
+        mkdir .__release
+        cp ${{ github.action_path }}/.nvmrc .__release
+        cp ${{ github.action_path }}/package.json .__release
+        cp ${{ github.action_path }}/package-lock.json .__release
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .__release/.nvmrc
+
+    - name: Install dependencies
+      shell: bash
+      run: npm install --prefix .__release
+
+    - name: Set up Git
+      shell: bash
+      run: |
+        git config --global user.name ${{ inputs.git-user-name }}
+        git config --global user.email ${{ inputs.git-user-email }}
+
+    - name: Get Latest Tag and Release
+      shell: bash
+      run: |
+        LATEST_RELEASE=$(gh release list --repo ${{ github.repository }} --limit 1 --exclude-drafts --json name -q .[0].name || echo 'N/A')
+        LATEST_TAG=$(gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/${{ github.repository }}/tags -q .[0].name || echo 'N/A')
+        echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
+        echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run semantic-release
+      id: semantic
+      shell: bash
+      run: |
+        npx --prefix .__release semantic-release 2>&1 | tee release_output.txt
+        TAG=$(tail -1 release_output.txt | grep -oP "\d+\.\d+\.\d+" || true)
+        if [[ -n "$TAG" ]]; then
+          echo "NEW_TAG=$TAG" >> $GITHUB_ENV
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Export outputs
+      id: variables
+      shell: bash
+      run: |
+        echo "new-tag=${{ env.NEW_TAG }}" >> $GITHUB_OUTPUT
+
+    - name: Publish Summary
+      if: ${{ inputs.publish-summary == 'true' }}
+      shell: bash
+      run: |
+        echo "## New Tag summary" >> $GITHUB_STEP_SUMMARY
+        echo "A new Release and Tag has been created."
+        echo "| | Prvious | New |" >> $GITHUB_STEP_SUMMARY
+        echo "| --- | :-: | :-: |" >> $GITHUB_STEP_SUMMARY
+        echo "| Tag | ${{ env.LATEST_TAG }} | ${{ env.NEW_TAG }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Release | ${{ env.LATEST_RELEASE }} | ${{ env.NEW_TAG }} |" >> $GITHUB_STEP_SUMMARY
