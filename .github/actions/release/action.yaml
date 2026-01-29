@@ -17,8 +17,11 @@ inputs:
     description: The GitHub repository in which to release, usually the one calling this workflow
     required: true
   publish-summary:
-    description: Publish a summary for the release
+    description: Publishes a summary for the release if "true"
     default: "true"
+  skip-checkout:
+    description: Skips the checkout step if "true"
+    default: "false"
 outputs:
   new-tag:
     description: New tag or null if none
@@ -44,6 +47,7 @@ runs:
           ${{ steps.base-name.outputs.repository }}
 
     - name: Checkout
+      if: ${{ inputs.skip-checkout != 'true' }}
       uses: actions/checkout@v4
       with:
         fetch-depth: 1
