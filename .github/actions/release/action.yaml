@@ -84,7 +84,7 @@ runs:
         echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
         echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
     - name: Run semantic-release
       id: semantic
@@ -96,7 +96,7 @@ runs:
           echo "NEW_TAG=$TAG" >> $GITHUB_ENV
         fi
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
     - name: Export outputs
       id: variables
