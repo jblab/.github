@@ -48,7 +48,7 @@ runs:
 
     - name: Checkout
       if: ${{ inputs.skip-checkout != 'true' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 1
         token: ${{ steps.app-token.outputs.token }}
