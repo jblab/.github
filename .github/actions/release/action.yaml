@@ -62,7 +62,7 @@ runs:
         cp ${{ github.action_path }}/package-lock.json .__release
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: .__release/.nvmrc
 
