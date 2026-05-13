@@ -3,7 +3,10 @@ description: Composite action for semantic releases
 inputs:
   app-id:
     description: The GitHub Application ID
-    required: true
+    required: false
+  app-client-id:
+    description: The GitHub Application Client ID
+    required: false
   app-private-key:
     description: The GitHub Application Private Key
     required: true
@@ -30,6 +33,29 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        client_id="${{ inputs.app-client-id }}"
+        app_id="${{ inputs.app-id }}"
+
+        # Require at least one
+        if [[ -z "$client_id" && -z "$app_id" ]]; then
+          echo "::error::You must provide either 'app-client-id' or 'app-id'."
+          exit 1
+        fi
+
+        # Enforce exactly one
+        if [[ -n "$client_id" && -n "$app_id" ]]; then
+          echo "::error::Provide only one of 'app-client-id' or 'app-id', not both."
+          exit 1
+        fi
+        
+        # Warn if using deprecated app-id
+        if [[ -n "$app_id" ]]; then
+          echo "::warning::The 'app-id' input is deprecated. Please switch to 'app-client-id' for better security and flexibility."
+        fi
+
     - name: Get repository base name
       id: base-name
       shell: bash
@@ -38,10 +64,11 @@ runs:
         REPO: ${{ inputs.repository }}
 
     - name: Create GitHub App token
-      uses: actions/create-github-app-token@v1.11.0
+      uses: actions/create-github-app-token@v3
       id: app-token
       with:
         app-id: ${{ inputs.app-id }}
+        client-id: ${{ inputs.app-client-id }}
         private-key: ${{ inputs.app-private-key }}
         repositories: |
           ${{ steps.base-name.outputs.repository }}
