@@ -1,0 +1,39 @@
+name: Check Workflow Status
+
+on:
+  workflow_call:
+    inputs:
+      workflow-results:
+        description: JSON object of caller job results (pass `$\{{ toJson(needs) }}` from the caller workflow)
+        default: "{}"
+        required: false
+        type: string
+
+jobs:
+  check-workflow-status:
+    name: Check Workflow Status
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      actions: read
+    steps:
+      - name: Check Workflow Status
+        env:
+          WORKFLOW_RESULTS: ${{ inputs.workflow-results }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$WORKFLOW_RESULTS" || "$WORKFLOW_RESULTS" == "{}" ]]; then
+            echo "No caller job results provided; nothing to validate."
+            exit 0
+          fi
+
+          failed_jobs="$(jq -r 'to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key' <<<"$WORKFLOW_RESULTS")"
+
+          if [[ -n "$failed_jobs" ]]; then
+            echo "The following jobs failed or were cancelled:"
+            echo "$failed_jobs"
+            exit 1
+          fi
+
+          echo "All tracked jobs completed without failure/cancellation."
