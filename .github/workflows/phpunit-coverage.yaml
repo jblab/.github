@@ -33,6 +33,11 @@ on:
         default: .
         required: false
         type: string
+      phpunit-bin:
+        description: Path to PHPUnit binary
+        required: false
+        default: 'vendor/bin/simple-phpunit'
+        type: string
 
 jobs:
   tests_coverage:
@@ -59,7 +64,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         env:
           EXTRA_ARGS: ${{ true == inputs.publish-summary && ' --coverage-cobertura coverage.cobertura.xml' || '' }}
-        run: vendor/bin/simple-phpunit $EXTRA_ARGS
+        run: ${{ inputs.phpunit-bin }} $EXTRA_ARGS
 
       - name: Code Coverage Report
         if: ${{ true == inputs.publish-summary }}
